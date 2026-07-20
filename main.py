@@ -11,10 +11,12 @@ data_operator = DataOperatorPostgres(conn_params)
 
 try:
     data_operator.connect()
+
     data_operator.read_json_file("rooms.json")
-    data_operator.create_table("rooms")
+    data_operator.create_table("rooms", "id")
+
     data_operator.read_json_file("students.json")
-    data_operator.create_table("students")
+    data_operator.create_table("students", "id")
 except Exception as error:
     print(error)
 finally:

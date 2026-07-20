@@ -35,17 +35,22 @@ class DataOperatorPostgres:
         except Exception:
             raise Exception("Unknown error!")
 
-    def create_table(self, table_name: str) -> None:
+    def create_table(self, table_name: str, primary_key: str) -> None:
         columns_parts = []
         for key, value in self.json_data[0].items():
-            if key == "id":
-                columns_parts.append("id SERIAL PRIMARY KEY")
+            if key == primary_key and self.TYPE_MAPPING.get(type(value)) == "INT":
+                columns_parts.append(f"{key} SERIAL PRIMARY KEY")
+            elif key == primary_key:
+                columns_parts.append(f"{key} " + self.TYPE_MAPPING.get(type(value), "TEXT") + " PRIMARY KEY")
             else:
                 columns_parts.append(f"{key} " + self.TYPE_MAPPING.get(type(value), "TEXT"))
         columns = ','.join(columns_parts)
         print(f"CREATE TABLE IF NOT EXISTS {table_name}({columns});")
-        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name}({columns});")
-        self.connection.commit()
+        try:
+            self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name}({columns});")
+            self.connection.commit()
+        except psycopg2.DatabaseError as error:
+            raise Exception(f"Failed creating table: {error}")
 
     def close(self) -> None:
         if self.cursor is not None:
