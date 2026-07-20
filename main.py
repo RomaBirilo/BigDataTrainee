@@ -14,9 +14,11 @@ try:
 
     data_operator.read_json_file("rooms.json")
     data_operator.create_table("rooms", "id")
+    data_operator.insert_data("rooms")
 
     data_operator.read_json_file("students.json")
     data_operator.create_table("students", "id")
+    data_operator.insert_data("students")
 except Exception as error:
     print(error)
 finally:

@@ -1,4 +1,5 @@
 import psycopg2
+from psycopg2 import extras
 import json
 
 class DataOperatorPostgres:
@@ -6,7 +7,7 @@ class DataOperatorPostgres:
         self.connection_params = connection_params
         self.connection = None
         self.cursor = None
-        self.json_data = None
+        self.file_data = None
         self.response = None
         self.TYPE_MAPPING = {
             int: "INT",
@@ -26,7 +27,7 @@ class DataOperatorPostgres:
     def read_json_file(self, path: str) -> None:
         try:
             with open(path, 'r') as file:
-                self.json_data = json.load(file)
+                self.file_data = json.load(file)
                 print(f"File {path} was read successfully!")
         except FileNotFoundError:
             raise Exception(f"File {path} not found!")
@@ -37,7 +38,7 @@ class DataOperatorPostgres:
 
     def create_table(self, table_name: str, primary_key: str) -> None:
         columns_parts = []
-        for key, value in self.json_data[0].items():
+        for key, value in self.file_data[0].items():
             if key == primary_key and self.TYPE_MAPPING.get(type(value)) == "INT":
                 columns_parts.append(f"{key} SERIAL PRIMARY KEY")
             elif key == primary_key:
@@ -49,8 +50,22 @@ class DataOperatorPostgres:
         try:
             self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name}({columns});")
             self.connection.commit()
+            print("Your table was created successfully!")
         except psycopg2.DatabaseError as error:
             raise Exception(f"Failed creating table: {error}")
+
+    def insert_data(self, table_name: str) -> None:
+        fields_parts = list(self.file_data[0].keys())
+        fields = ','.join(fields_parts)
+        data_to_insert = [tuple(item[key] for key in fields_parts) for item in self.file_data]
+        query = f"INSERT INTO {table_name} " + '(' + fields + ')' + " VALUES %s;"
+        try:
+            extras.execute_values(self.cursor, query, data_to_insert)
+            self.connection.commit()
+            print("Your data was inserted successfully!")
+        except psycopg2.DatabaseError as error:
+            raise Exception(f"Failed creating table: {error}")
+
 
     def close(self) -> None:
         if self.cursor is not None:
