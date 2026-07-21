@@ -36,6 +36,13 @@ class DataOperatorPostgres:
         except Exception:
             raise Exception("Unknown error!")
 
+    def execute_query(self, query: str) -> None:
+        try:
+            self.cursor.execute(query)
+            self.connection.commit()
+        except psycopg2.DatabaseError as error:
+            raise Exception(f"Query failed: {error}")
+
     def create_table(self, table_name: str, primary_key: str) -> None:
         columns_parts = []
         for key, value in self.file_data[0].items():
@@ -46,12 +53,12 @@ class DataOperatorPostgres:
             else:
                 columns_parts.append(f"{key} " + self.TYPE_MAPPING.get(type(value), "TEXT"))
         columns = ','.join(columns_parts)
-        print(f"CREATE TABLE IF NOT EXISTS {table_name}({columns});")
+        query = f"CREATE TABLE IF NOT EXISTS {table_name}({columns});"
+        print(query)
         try:
-            self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name}({columns});")
-            self.connection.commit()
+            self.execute_query(query)
             print("Your table was created successfully!")
-        except psycopg2.DatabaseError as error:
+        except Exception as error:
             raise Exception(f"Failed creating table: {error}")
 
     def insert_data(self, table_name: str) -> None:
@@ -64,8 +71,7 @@ class DataOperatorPostgres:
             self.connection.commit()
             print("Your data was inserted successfully!")
         except psycopg2.DatabaseError as error:
-            raise Exception(f"Failed creating table: {error}")
-
+            raise Exception(f"Failed inserting data: {error}")
 
     def close(self) -> None:
         if self.cursor is not None:
