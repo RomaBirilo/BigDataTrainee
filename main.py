@@ -20,8 +20,8 @@ try:
     data_operator.create_table("students", "id")
     data_operator.insert_data("students")
 
-
-
+    data_operator.create_relationship("students", "room",
+                                      "rooms", "id")
 except Exception as error:
     print(error)
 finally:
