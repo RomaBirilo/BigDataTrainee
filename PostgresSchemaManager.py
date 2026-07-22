@@ -46,12 +46,19 @@ class PostgresSchemaManager:
     def create_relationship(self, left_table_name: str, left_table_field:str,
                             right_table_name: str, right_table_field: str) -> None:
         query = f"""
-        ALTER TABLE {left_table_name}
-        ADD CONSTRAINT fk_{left_table_name}_{right_table_name}
-        FOREIGN KEY ({left_table_field}) REFERENCES {right_table_name}({right_table_field})
-        ON DELETE CASCADE; 
+            ALTER TABLE {left_table_name}
+            ADD CONSTRAINT fk_{left_table_name}_{right_table_name}
+            FOREIGN KEY ({left_table_field}) REFERENCES {right_table_name}({right_table_field})
+            ON DELETE CASCADE; 
         """
         try:
             self.connection_manager.execute_query(query)
         except Exception as error:
             raise Exception(f"Failed creating relationship: {error}")
+
+    def create_index(self, table_name: str, table_field: str) -> None:
+        query = f"CREATE INDEX IF NOT EXISTS idx_{table_name}_{table_field} ON {table_name}({table_field})"
+        try:
+            self.connection_manager.execute_query(query)
+        except Exception as error:
+            raise Exception(f"Failed creating index: {error}")
