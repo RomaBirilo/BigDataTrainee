@@ -1,0 +1,11 @@
+project_id = ""
+region     = "us-central1"
+env        = "dev"
+app_name   = "weather"
+owner      = "data-platform-team"
+
+weather_locations    = ["New York", "London"]
+weather_api_base_url = "https://api.tomorrow.io/v4/weather/realtime"
+
+bq_dataset_id = "weather_analytics"
+bq_table_id   = "gold_weather_realtime"
