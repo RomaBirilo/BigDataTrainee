@@ -11,6 +11,7 @@ locals {
     "bigquerystorage.googleapis.com",
     "storage.googleapis.com",
     "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
   ]
 }
 

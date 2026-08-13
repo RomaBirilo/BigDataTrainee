@@ -1,5 +1,7 @@
 data "google_project" "current" {
   project_id = var.project_id
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_project_iam_member" "cloudbuild_sa_builder" {
