@@ -2,8 +2,8 @@ from airflow.sdk import task
 from pendulum import now
 from airflow.exceptions import AirflowFailException
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
-from airflow.include.validation.weather_validation import filter_valid_payloads, build_dataframe, deduplicate
-from airflow.include.upload.serialize_to_csv import records_to_csv_bytes
+from include.validation.weather_validation import filter_valid_payloads, build_dataframe, deduplicate
+from include.upload.serialize_to_csv import records_to_csv_bytes
 
 @task
 def resolve_source_prefix(source_path: str | None, location: str) -> str:

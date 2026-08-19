@@ -1,6 +1,6 @@
 from pendulum import datetime
 from airflow.sdk import dag
-from airflow.include.task_groups.bronze_to_silver_group import process_location
+from include.task_groups.bronze_to_silver_group import process_location
 
 @dag(
     schedule=None,
