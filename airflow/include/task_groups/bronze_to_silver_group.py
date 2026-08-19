@@ -9,5 +9,6 @@ def process_location(location: str, source_path: str | None = None):
     prefix = resolve_source_prefix(source_path=source_path, location=location)
     blobs = list_bronze_files(bucket_name=BUCKET_NAME, prefix=prefix)
     records = download_bronze_files(blobs=blobs, bucket_name=BUCKET_NAME, prefix=prefix)
-    return records
+    upload_to_silver(records=records, prefix=prefix, bucket_name=BUCKET_NAME)
+
 

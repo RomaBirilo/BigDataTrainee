@@ -3,6 +3,7 @@ from pendulum import now
 from airflow.exceptions import AirflowFailException
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.include.validation.weather_validation import filter_valid_payloads, build_dataframe, deduplicate
+from airflow.include.upload.serialize_to_csv import records_to_csv_bytes
 
 @task
 def resolve_source_prefix(source_path: str | None, location: str) -> str:
@@ -55,4 +56,22 @@ def download_bronze_files(blobs: list[str], bucket_name: str, prefix: str) -> li
 
     return df.to_dict(orient="records")
 
+@task
+def upload_to_silver(records: list[dict], prefix: str, bucket_name: str) -> None:
+    if not records:
+        raise AirflowFailException("Cannot upload to silver: records list is empty.")
+    prefix = prefix.replace("bronze", "silver")
+    run_ts = pendulum.now("UTC").to_iso8601_string()
 
+    object_name = prefix + f"/{run_ts}.csv"
+
+    csv_bytes = records_to_csv_bytes(records)
+
+    hook = GCSHook()
+    hook.upload(
+        bucket_name=bucket_name,
+        object_name=object_name,
+        data=csv_bytes,
+        mime_type="text/csv",
+    )
+    log.info(f"Uploaded {len(records)} record(s) to gсs://{bucket_name}/{object_name}")
