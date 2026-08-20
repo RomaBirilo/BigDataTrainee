@@ -89,7 +89,7 @@ variable "weather_api_base_url" {
 
 variable "weather_locations" {
   type    = list(string)
-  default = ["New York"]
+  default = ["New York", "London", "Tokyo", "Warsaw"]
 
   validation {
     condition     = length(var.weather_locations) > 0
