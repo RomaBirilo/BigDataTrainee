@@ -1,4 +1,5 @@
 import io
+import pandas as pd
 
 def records_to_csv_bytes(records: list[dict]) -> bytes:
     df = pd.DataFrame.from_records(records)
