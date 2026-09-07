@@ -1,5 +1,6 @@
-from PostgresConnectionManager import PostgresConnectionManager
+from postgres_connection_manager import PostgresConnectionManager
 from psycopg2 import extras
+import psycopg2
 
 class PostgresSchemaManager:
     def __init__(self, connection_manager: PostgresConnectionManager, type_mapping: dict = None) -> None:

@@ -1,4 +1,4 @@
-from PostgresConnectionManager import PostgresConnectionManager
+from postgres_connection_manager import PostgresConnectionManager
 
 class QueryManager:
     def __init__(self, connection_manager: PostgresConnectionManager) -> None:

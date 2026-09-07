@@ -7,11 +7,8 @@ class PostgresConnectionManager:
         self.cursor = None
 
     def connect(self) -> None:
-        try:
-            self.connection = psycopg2.connect(**self.connection_params)
-            self.cursor = self.connection.cursor()
-        except Exception as error:
-            raise Exception(f"Connection failed: {error}")
+        self.connection = psycopg2.connect(**self.connection_params)
+        self.cursor = self.connection.cursor()
 
     def execute_query(self, query: str, params: tuple | list = None, fetch: bool = False) -> list | None:
         try:
