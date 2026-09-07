@@ -1,4 +1,7 @@
 from postgres_connection_manager import PostgresConnectionManager
+import logging
+
+logger = logging.getLogger(__name__)
 
 class QueryManager:
     def __init__(self, connection_manager: PostgresConnectionManager) -> None:
@@ -12,13 +15,13 @@ class QueryManager:
             GROUP BY r.id, r.name
             ORDER BY r.id;
         """
-        try:
-            raw_data = self.connection_manager.execute_query(query, fetch=True)
-            return [{"room_name": row[0], "student_count": row[1]} for row in raw_data]
-        except Exception as error:
-            raise Exception(error)
 
-    def rooms_with_smallest_avg_age(self):
+        logger.debug("Executing query: rooms_with_students_number")
+        raw_data = self.connection_manager.execute_query(query, fetch=True)
+        logger.debug("Query returned %s rows", len(raw_data))
+        return [{"room_name": row[0], "student_count": row[1]} for row in raw_data]
+
+    def rooms_with_smallest_avg_age(self) -> list[dict]:
         query = """
             SELECT r.name, 
             EXTRACT(YEAR FROM AVG(AGE(s.birthday::date)))::int AS avg_age
@@ -28,13 +31,13 @@ class QueryManager:
             ORDER BY avg_age
             LIMIT 5;
         """
-        try:
-            raw_data = self.connection_manager.execute_query(query, fetch=True)
-            return [{"room_name": row[0], "avg_age": row[1]} for row in raw_data]
-        except Exception as error:
-            raise Exception(error)
 
-    def rooms_with_largest_age_diff(self):
+        logger.debug("Executing query: rooms_with_smallest_avg_age")
+        raw_data = self.connection_manager.execute_query(query, fetch=True)
+        logger.debug("Query returned %s rows", len(raw_data))
+        return [{"room_name": row[0], "avg_age": row[1]} for row in raw_data]
+
+    def rooms_with_largest_age_diff(self) -> list[dict]:
         query = """
             SELECT r.name, 
             EXTRACT(YEAR FROM MAX(AGE(s.birthday::date)) - MIN(AGE(s.birthday::date)))::int AS age_diff
@@ -44,13 +47,13 @@ class QueryManager:
             ORDER BY age_diff DESC
             LIMIT 5;
         """
-        try:
-            raw_data = self.connection_manager.execute_query(query, fetch=True)
-            return [{"room_name": row[0], "age_diff": row[1]} for row in raw_data]
-        except Exception as error:
-            raise Exception(error)
 
-    def rooms_with_diff_sex_students(self):
+        logger.debug("Executing query: rooms_with_largest_age_diff")
+        raw_data = self.connection_manager.execute_query(query, fetch=True)
+        logger.debug("Query returned %s rows", len(raw_data))
+        return [{"room_name": row[0], "age_diff": row[1]} for row in raw_data]
+
+    def rooms_with_diff_sex_students(self) -> list[dict]:
         query = """
             SELECT r.name
             FROM rooms AS r
@@ -59,8 +62,8 @@ class QueryManager:
             HAVING COUNT(DISTINCT s.sex) = 2
             ORDER BY r.id;     
         """
-        try:
-            raw_data = self.connection_manager.execute_query(query, fetch=True)
-            return [{"room_name": row[0]} for row in raw_data]
-        except Exception as error:
-            raise Exception(error)
+
+        logger.debug("Executing query: rooms_with_diff_sex_students")
+        raw_data = self.connection_manager.execute_query(query, fetch=True)
+        logger.debug("Query returned %s rows", len(raw_data))
+        return [{"room_name": row[0]} for row in raw_data]

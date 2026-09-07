@@ -1,6 +1,9 @@
 from postgres_connection_manager import PostgresConnectionManager
 from psycopg2 import extras
 import psycopg2
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PostgresSchemaManager:
     def __init__(self, connection_manager: PostgresConnectionManager, type_mapping: dict = None) -> None:
@@ -25,11 +28,11 @@ class PostgresSchemaManager:
             else:
                 columns_parts.append(f"{key} " + self.TYPE_MAPPING.get(type(value), "TEXT"))
         columns = ','.join(columns_parts)
+
         query = f"CREATE TABLE IF NOT EXISTS {table_name}({columns});"
-        try:
-            self.connection_manager.execute_query(query)
-        except Exception as error:
-            raise Exception(f"Failed creating table: {error}")
+
+        logger.debug("Creating table %s", table_name)
+        self.connection_manager.execute_query(query)
 
     def insert_data(self, table_name: str, file_data: list) -> None:
         if not file_data:
@@ -37,12 +40,13 @@ class PostgresSchemaManager:
         fields_parts = list(file_data[0].keys())
         fields = ','.join(fields_parts)
         data_to_insert = [tuple(item[key] for key in fields_parts) for item in file_data]
+
         query = f"INSERT INTO {table_name} ({fields}) VALUES %s;"
-        try:
-            extras.execute_values(self.connection_manager.cursor, query, data_to_insert)
-            self.connection_manager.connection.commit()
-        except psycopg2.DatabaseError as error:
-            raise Exception(f"Failed inserting data: {error}")
+
+        logger.debug("Inserting data to %s table", table_name)
+        extras.execute_values(self.connection_manager.cursor, query, data_to_insert)
+        self.connection_manager.connection.commit()
+        logger.debug("Inserted %d rows into %s", len(file_data), table_name)
 
     def create_relationship(self, left_table_name: str, left_table_field:str,
                             right_table_name: str, right_table_field: str) -> None:
@@ -52,14 +56,12 @@ class PostgresSchemaManager:
             FOREIGN KEY ({left_table_field}) REFERENCES {right_table_name}({right_table_field})
             ON DELETE CASCADE; 
         """
-        try:
-            self.connection_manager.execute_query(query)
-        except Exception as error:
-            raise Exception(f"Failed creating relationship: {error}")
+
+        logger.debug("Creating relationship between %s and %s", left_table_name, right_table_name)
+        self.connection_manager.execute_query(query)
 
     def create_index(self, table_name: str, table_field: str) -> None:
         query = f"CREATE INDEX IF NOT EXISTS idx_{table_name}_{table_field} ON {table_name}({table_field})"
-        try:
-            self.connection_manager.execute_query(query)
-        except Exception as error:
-            raise Exception(f"Failed creating index: {error}")
+
+        logger.debug("Creating index idx_%s_%s on %s(%s)", table_name, table_field, table_name, table_field)
+        self.connection_manager.execute_query(query)

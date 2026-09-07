@@ -1,13 +1,19 @@
-import logging
 from dotenv import load_dotenv
+load_dotenv()
+
+from logging_config import setup_logging
+setup_logging()
+
+import logging
 import os
+import sys
 
 from json_file_manager import JSONFileManager
 from postgres_connection_manager import PostgresConnectionManager
 from postgres_schema_manager import PostgresSchemaManager
 from query_manager import QueryManager
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
 conn_params = {
     "host": os.getenv("HOST"),
@@ -20,43 +26,35 @@ conn_params = {
 def main(connection_params: dict) -> None:
     db_connection = PostgresConnectionManager(connection_params)
     try:
-        print("Try to connect...")
+        logger.info("Connecting to database...")
         db_connection.connect()
-        print("Connection successfully!")
+        logger.info("Connection successfully")
 
-        print("Reading files...")
+        logger.info("Reading input files...")
         rooms_data = JSONFileManager.read_json_file("rooms.json")
         students_data = JSONFileManager.read_json_file("students.json")
-        print("Files were read successfully!")
+        logger.info("Files read successfully")
 
+        logger.info("Starting schema creation")
         schema_manager = PostgresSchemaManager(connection_manager=db_connection)
 
-        print("Creating schema...")
         schema_manager.create_table("rooms", rooms_data[0], "id")
-        print("Table was created successfully!")
         schema_manager.insert_data("rooms", rooms_data)
-        print("Data was inserted successfully!")
 
         schema_manager.create_table("students", students_data[0], "id")
-        print("Table was created successfully!")
         schema_manager.insert_data("students", students_data)
-        print("Data was inserted successfully!")
 
         schema_manager.create_relationship("students", "room",
                                            "rooms", "id")
-        print("Relationship was created successfully!")
 
         schema_manager.create_index("rooms", "name")
-        print("Index was created successfully!")
         schema_manager.create_index("students", "name")
-        print("Index was created successfully!")
         schema_manager.create_index("students", "birthday")
-        print("Index was created successfully!")
-        print("Schema was created successfully!")
+        logger.info("Schema creation completed")
 
+        logger.info("Executing queries...")
         query_manager = QueryManager(connection_manager=db_connection)
 
-        print("Queries execution...")
         response = query_manager.rooms_with_students_number()
         JSONFileManager.write_json_file("rooms_with_students_number.json", response)
 
@@ -68,10 +66,11 @@ def main(connection_params: dict) -> None:
 
         response = query_manager.rooms_with_diff_sex_students()
         JSONFileManager.write_json_file("rooms_with_diff_sex_students.json", response)
-        print("All queries were executed successfully!")
+        logger.info("All queries executed successfully")
 
     except Exception as error:
-        print(error)
+        logger.exception("Unhandled error during script execution")
+        sys.exit(1)
     finally:
         db_connection.close()
 

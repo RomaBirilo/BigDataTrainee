@@ -1,4 +1,7 @@
 import psycopg2
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PostgresConnectionManager:
     def __init__(self, connection_params: dict) -> None:
@@ -13,8 +16,10 @@ class PostgresConnectionManager:
     def execute_query(self, query: str, params: tuple | list = None, fetch: bool = False) -> list | None:
         try:
             if params:
+                logger.debug("Executing query: %s | params: %s", query, params)
                 self.cursor.execute(query, params)
             else:
+                logger.debug("Executing query: %s", query)
                 self.cursor.execute(query)
             if fetch:
                 result = self.cursor.fetchall()
@@ -25,7 +30,7 @@ class PostgresConnectionManager:
         except psycopg2.DatabaseError as error:
             if self.connection:
                 self.connection.rollback()
-            raise Exception(f"Query failed: {error}")
+            raise Exception(f"Query failed: {error}") from error
 
     def close(self) -> None:
         if self.cursor is not None:
