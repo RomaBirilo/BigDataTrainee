@@ -26,6 +26,15 @@ class PostgresConnectionManager:
         except psycopg.DatabaseError as error:
             raise Exception(f"Query failed: {error}") from error
 
+    async def execute_many(self, query: str, data: list[tuple]) -> None:
+        try:
+            async with self.pool.connection() as connection:
+                async with connection.cursor() as cursor:
+                    logger.debug("Executing query: %s | %d rows", query, len(data))
+                    await cursor.executemany(query, data)
+        except psycopg.DatabaseError as error:
+            raise Exception(f"Query failed: {error}") from error
+
     async def close(self) -> None:
         if self.pool is not None:
            await self.pool.close()

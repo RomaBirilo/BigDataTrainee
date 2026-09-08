@@ -5,7 +5,7 @@ from logging_config import setup_logging
 setup_logging()
 
 import logging
-import os
+import asyncio
 import sys
 
 from json_file_manager import JSONFileManager
@@ -19,17 +19,17 @@ logger = logging.getLogger(__name__)
 config = PGSettings()
 conn_params = {
     "host": config.host,
-    "database": config.pg_database,
+    "dbname": config.pg_database,
     "user": config.pg_user,
     "password": config.pg_password,
     "port": config.pg_port
 }
 
-def main(connection_params: dict) -> None:
+async def main(connection_params: dict) -> None:
     db_connection = PostgresConnectionManager(connection_params)
     try:
         logger.info("Connecting to database...")
-        db_connection.connect()
+        await db_connection.connect()
         logger.info("Connection successfully")
 
         logger.info("Reading input files...")
@@ -40,41 +40,41 @@ def main(connection_params: dict) -> None:
         logger.info("Starting schema creation")
         schema_manager = PostgresSchemaManager(connection_manager=db_connection)
 
-        schema_manager.create_table("rooms", rooms_data[0], "id")
-        schema_manager.insert_data("rooms", rooms_data)
+        await schema_manager.create_table("rooms", rooms_data[0], "id")
+        await schema_manager.insert_data("rooms", rooms_data)
 
-        schema_manager.create_table("students", students_data[0], "id")
-        schema_manager.insert_data("students", students_data)
+        await schema_manager.create_table("students", students_data[0], "id")
+        await schema_manager.insert_data("students", students_data)
 
-        schema_manager.create_relationship("students", "room",
+        await schema_manager.create_relationship("students", "room",
                                            "rooms", "id")
 
-        schema_manager.create_index("rooms", "name")
-        schema_manager.create_index("students", "name")
-        schema_manager.create_index("students", "birthday")
+        await schema_manager.create_index("rooms", "name")
+        await schema_manager.create_index("students", "name")
+        await schema_manager.create_index("students", "birthday")
         logger.info("Schema creation completed")
 
         logger.info("Executing queries...")
         query_manager = QueryManager(connection_manager=db_connection)
 
-        response = query_manager.rooms_with_students_number()
-        JSONFileManager.write_json_file("rooms_with_students_number.json", response)
-
-        response = query_manager.rooms_with_smallest_avg_age()
-        JSONFileManager.write_json_file("rooms_with_smallest_avg_age.json", response)
-
-        response = query_manager.rooms_with_largest_age_diff()
-        JSONFileManager.write_json_file("rooms_with_largest_age_diff.json", response)
-
-        response = query_manager.rooms_with_diff_sex_students()
-        JSONFileManager.write_json_file("rooms_with_diff_sex_students.json", response)
+        result = await asyncio.gather(query_manager.rooms_with_students_number(),
+                                      query_manager.rooms_with_smallest_avg_age(),
+                                      query_manager.rooms_with_largest_age_diff(),
+                                      query_manager.rooms_with_diff_sex_students()
+                                      )
+        JSONFileManager.write_json_file("rooms_with_students_number.json", result[0])
+        JSONFileManager.write_json_file("rooms_with_smallest_avg_age.json", result[1])
+        JSONFileManager.write_json_file("rooms_with_largest_age_diff.json", result[2])
+        JSONFileManager.write_json_file("rooms_with_diff_sex_students.json", result[3])
         logger.info("All queries executed successfully")
 
-    except Exception as error:
+    except Exception:
         logger.exception("Unhandled error during script execution")
         sys.exit(1)
     finally:
-        db_connection.close()
+        await db_connection.close()
 
 if __name__ == "__main__":
-    main(connection_params=conn_params)
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(main(connection_params=conn_params))

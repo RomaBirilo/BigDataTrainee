@@ -1,6 +1,4 @@
 from postgres_connection_manager import PostgresConnectionManager
-from psycopg2 import extras
-import psycopg2
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,7 +16,7 @@ class PostgresSchemaManager:
                 bool: "BOOLEAN"
             }
 
-    def create_table(self, table_name: str, sample_data: dict, primary_key: str) -> None:
+    async def create_table(self, table_name: str, sample_data: dict, primary_key: str) -> None:
         columns_parts = []
         for key, value in sample_data.items():
             if key == primary_key and self.TYPE_MAPPING.get(type(value)) == "INT":
@@ -32,23 +30,24 @@ class PostgresSchemaManager:
         query = f"CREATE TABLE IF NOT EXISTS {table_name}({columns});"
 
         logger.debug("Creating table %s", table_name)
-        self.connection_manager.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
-    def insert_data(self, table_name: str, file_data: list) -> None:
+    async def insert_data(self, table_name: str, file_data: list) -> None:
         if not file_data:
             return
+
         fields_parts = list(file_data[0].keys())
         fields = ','.join(fields_parts)
+        placeholders = ','.join(['%s'] * len(fields_parts))
         data_to_insert = [tuple(item[key] for key in fields_parts) for item in file_data]
 
-        query = f"INSERT INTO {table_name} ({fields}) VALUES %s;"
+        query = f"INSERT INTO {table_name} ({fields}) VALUES ({placeholders});"
 
         logger.debug("Inserting data to %s table", table_name)
-        extras.execute_values(self.connection_manager.cursor, query, data_to_insert)
-        self.connection_manager.connection.commit()
+        await self.connection_manager.execute_many(query, data_to_insert)
         logger.debug("Inserted %d rows into %s", len(file_data), table_name)
 
-    def create_relationship(self, left_table_name: str, left_table_field:str,
+    async def create_relationship(self, left_table_name: str, left_table_field:str,
                             right_table_name: str, right_table_field: str) -> None:
         query = f"""
             ALTER TABLE {left_table_name}
@@ -58,10 +57,10 @@ class PostgresSchemaManager:
         """
 
         logger.debug("Creating relationship between %s and %s", left_table_name, right_table_name)
-        self.connection_manager.execute_query(query)
+        await self.connection_manager.execute_query(query)
 
-    def create_index(self, table_name: str, table_field: str) -> None:
+    async def create_index(self, table_name: str, table_field: str) -> None:
         query = f"CREATE INDEX IF NOT EXISTS idx_{table_name}_{table_field} ON {table_name}({table_field})"
 
         logger.debug("Creating index idx_%s_%s on %s(%s)", table_name, table_field, table_name, table_field)
-        self.connection_manager.execute_query(query)
+        await self.connection_manager.execute_query(query)
