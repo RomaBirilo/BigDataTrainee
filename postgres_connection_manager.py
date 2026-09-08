@@ -1,39 +1,31 @@
-import psycopg2
 import logging
+import psycopg
+from psycopg_pool import AsyncConnectionPool
 
 logger = logging.getLogger(__name__)
 
 class PostgresConnectionManager:
     def __init__(self, connection_params: dict) -> None:
         self.connection_params = connection_params
-        self.connection = None
-        self.cursor = None
+        self.pool = None
 
-    def connect(self) -> None:
-        self.connection = psycopg2.connect(**self.connection_params)
-        self.cursor = self.connection.cursor()
+    async def connect(self) -> None:
+        self.pool = AsyncConnectionPool(kwargs=self.connection_params, min_size=2, max_size=5, open=False)
+        await self.pool.open()
 
-    def execute_query(self, query: str, params: tuple | list = None, fetch: bool = False) -> list | None:
+    async def execute_query(self, query: str, params: tuple | list = None, fetch: bool = False) -> list | None:
         try:
-            if params:
-                logger.debug("Executing query: %s | params: %s", query, params)
-                self.cursor.execute(query, params)
-            else:
-                logger.debug("Executing query: %s", query)
-                self.cursor.execute(query)
-            if fetch:
-                result = self.cursor.fetchall()
-                self.connection.commit()
-                return result
-            self.connection.commit()
-            return None
-        except psycopg2.DatabaseError as error:
-            if self.connection:
-                self.connection.rollback()
+            async with self.pool.connection() as connection:
+                async with connection.cursor() as cursor:
+                    logger.debug("Executing query: %s | params: %s", query, params)
+                    await cursor.execute(query, params)
+                    if fetch:
+                        result = await cursor.fetchall()
+                        return result
+                    return None
+        except psycopg.DatabaseError as error:
             raise Exception(f"Query failed: {error}") from error
 
-    def close(self) -> None:
-        if self.cursor is not None:
-            self.cursor.close()
-        if self.connection is not None:
-            self.connection.close()
+    async def close(self) -> None:
+        if self.pool is not None:
+           await self.pool.close()
