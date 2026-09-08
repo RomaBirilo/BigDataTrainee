@@ -12,15 +12,17 @@ from json_file_manager import JSONFileManager
 from postgres_connection_manager import PostgresConnectionManager
 from postgres_schema_manager import PostgresSchemaManager
 from query_manager import QueryManager
+from config_settings import PGSettings
 
 logger = logging.getLogger(__name__)
 
+config = PGSettings()
 conn_params = {
-    "host": os.getenv("HOST"),
-    "database": os.getenv("DATABASE"),
-    "user": os.getenv("USER"),
-    "password": os.getenv("PASSWORD"),
-    "port": os.getenv("PORT")
+    "host": config.host,
+    "database": config.pg_database,
+    "user": config.pg_user,
+    "password": config.pg_password,
+    "port": config.pg_port
 }
 
 def main(connection_params: dict) -> None:
