@@ -8,10 +8,8 @@ import logging
 import asyncio
 import sys
 
-from json_file_manager import JSONFileManager
-from postgres_connection_manager import PostgresConnectionManager
-from postgres_schema_manager import PostgresSchemaManager
-from query_manager import QueryManager
+from pipeline_functions import (connect_to_database, load_input_data,
+                                create_database_schema, run_queries, save_results)
 from config_settings import PGSettings
 
 logger = logging.getLogger(__name__)
@@ -26,48 +24,17 @@ conn_params = {
 }
 
 async def main(connection_params: dict) -> None:
-    db_connection = PostgresConnectionManager(connection_params)
+    db_connection = None
     try:
-        logger.info("Connecting to database...")
-        await db_connection.connect()
-        logger.info("Connection successfully")
+        db_connection = await connect_to_database(connection_params)
 
-        logger.info("Reading input files...")
-        rooms_data = JSONFileManager.read_json_file("rooms.json")
-        students_data = JSONFileManager.read_json_file("students.json")
-        logger.info("Files read successfully")
+        rooms_data, students_data = load_input_data()
 
-        logger.info("Starting schema creation")
-        schema_manager = PostgresSchemaManager(connection_manager=db_connection)
+        await create_database_schema(db_connection, rooms_data, students_data)
 
-        await schema_manager.create_table("rooms", rooms_data[0], "id")
-        await schema_manager.insert_data("rooms", rooms_data)
+        result = await run_queries(db_connection)
 
-        await schema_manager.create_table("students", students_data[0], "id")
-        await schema_manager.insert_data("students", students_data)
-
-        await schema_manager.create_relationship("students", "room",
-                                           "rooms", "id")
-
-        await schema_manager.create_index("rooms", "name")
-        await schema_manager.create_index("students", "name")
-        await schema_manager.create_index("students", "birthday")
-        logger.info("Schema creation completed")
-
-        logger.info("Executing queries...")
-        query_manager = QueryManager(connection_manager=db_connection)
-
-        result = await asyncio.gather(query_manager.rooms_with_students_number(),
-                                      query_manager.rooms_with_smallest_avg_age(),
-                                      query_manager.rooms_with_largest_age_diff(),
-                                      query_manager.rooms_with_diff_sex_students()
-                                      )
-        JSONFileManager.write_json_file("rooms_with_students_number.json", result[0])
-        JSONFileManager.write_json_file("rooms_with_smallest_avg_age.json", result[1])
-        JSONFileManager.write_json_file("rooms_with_largest_age_diff.json", result[2])
-        JSONFileManager.write_json_file("rooms_with_diff_sex_students.json", result[3])
-        logger.info("All queries executed successfully")
-
+        save_results(result)
     except Exception:
         logger.exception("Unhandled error during script execution")
         sys.exit(1)
