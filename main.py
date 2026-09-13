@@ -39,7 +39,8 @@ async def main(connection_params: dict) -> None:
         logger.exception("Unhandled error during script execution")
         sys.exit(1)
     finally:
-        await db_connection.close()
+        if db_connection:
+            await db_connection.close()
 
 if __name__ == "__main__":
     if sys.platform == "win32":
