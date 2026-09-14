@@ -1,11 +1,11 @@
-from postgres_connection_manager import PostgresConnectionManager
+from database_connection_manager import DatabaseConnectionManager
 from sql_dialect import SQLDialect
 import logging
 
 logger = logging.getLogger(__name__)
 
 class QueryManager:
-    def __init__(self, connection_manager: PostgresConnectionManager, dialect: SQLDialect) -> None:
+    def __init__(self, connection_manager: DatabaseConnectionManager, dialect: SQLDialect) -> None:
         self.connection_manager = connection_manager
         self.dialect = dialect
 
