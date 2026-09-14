@@ -1,30 +1,21 @@
-from postgres_connection_manager import PostgresConnectionManager
+from database_connection_manager import DatabaseConnectionManager
+from sql_dialect import SQLDialect
 import logging
 
 logger = logging.getLogger(__name__)
 
-class PostgresSchemaManager:
-    def __init__(self, connection_manager: PostgresConnectionManager, type_mapping: dict = None) -> None:
+class SchemaManager:
+    def __init__(self, connection_manager: DatabaseConnectionManager, dialect: SQLDialect) -> None:
         self.connection_manager = connection_manager
-        if type_mapping:
-            self.TYPE_MAPPING = type_mapping
-        else:
-            self.TYPE_MAPPING = {
-                int: "INT",
-                float: "REAL",
-                str: "VARCHAR(255)",
-                bool: "BOOLEAN"
-            }
+        self.dialect = dialect
 
     async def create_table(self, table_name: str, sample_data: dict, primary_key: str) -> None:
         columns_parts = []
         for key, value in sample_data.items():
-            if key == primary_key and self.TYPE_MAPPING.get(type(value)) == "INT":
-                columns_parts.append(f"{key} SERIAL PRIMARY KEY")
-            elif key == primary_key:
-                columns_parts.append(f"{key} " + self.TYPE_MAPPING.get(type(value), "TEXT") + " PRIMARY KEY")
+            if key == primary_key:
+                columns_parts.append(self.dialect.primary_key_column(key, type(value)))
             else:
-                columns_parts.append(f"{key} " + self.TYPE_MAPPING.get(type(value), "TEXT"))
+                columns_parts.append(f"{key} {self.dialect.column_type(type(value))}")
         columns = ','.join(columns_parts)
 
         query = f"CREATE TABLE IF NOT EXISTS {table_name}({columns});"

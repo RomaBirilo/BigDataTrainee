@@ -1,11 +1,13 @@
 from postgres_connection_manager import PostgresConnectionManager
+from sql_dialect import SQLDialect
 import logging
 
 logger = logging.getLogger(__name__)
 
 class QueryManager:
-    def __init__(self, connection_manager: PostgresConnectionManager) -> None:
+    def __init__(self, connection_manager: PostgresConnectionManager, dialect: SQLDialect) -> None:
         self.connection_manager = connection_manager
+        self.dialect = dialect
 
     async def rooms_with_students_number(self) -> list[dict]:
         query = """
@@ -22,9 +24,9 @@ class QueryManager:
         return [{"room_name": row[0], "student_count": row[1]} for row in raw_data]
 
     async def rooms_with_smallest_avg_age(self) -> list[dict]:
-        query = """
+        query = f"""
             SELECT r.name, 
-            EXTRACT(YEAR FROM AVG(AGE(s.birthday::date)))::int AS avg_age
+            {self.dialect.age_in_years_expression("s.birthday")} AS avg_age
             FROM rooms AS r
             INNER JOIN students AS s ON r.id = s.room
             GROUP BY r.name
@@ -38,9 +40,9 @@ class QueryManager:
         return [{"room_name": row[0], "avg_age": row[1]} for row in raw_data]
 
     async def rooms_with_largest_age_diff(self) -> list[dict]:
-        query = """
+        query = f"""
             SELECT r.name, 
-            EXTRACT(YEAR FROM MAX(AGE(s.birthday::date)) - MIN(AGE(s.birthday::date)))::int AS age_diff
+            {self.dialect.age_diff_expression("s.birthday")} AS age_diff
             FROM rooms AS r
             INNER JOIN students AS s ON r.id = s.room
             GROUP BY r.name
