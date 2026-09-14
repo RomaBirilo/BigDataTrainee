@@ -1,10 +1,11 @@
 import logging
 import psycopg
 from psycopg_pool import AsyncConnectionPool
+from database_connection_manager import DatabaseConnectionManager
 
 logger = logging.getLogger(__name__)
 
-class PostgresConnectionManager:
+class PostgresConnectionManager(DatabaseConnectionManager):
     def __init__(self, connection_params: dict) -> None:
         self.connection_params = connection_params
         self.pool = None
