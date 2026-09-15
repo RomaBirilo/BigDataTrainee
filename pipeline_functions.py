@@ -1,18 +1,19 @@
+from database_connection_manager import DatabaseConnectionManager
 from json_file_manager import JSONFileManager
-from postgres_connection_manager import PostgresConnectionManager
-from postgres_schema_manager import PostgresSchemaManager
+from schema_manager import SchemaManager
 from query_manager import QueryManager
 import logging
 import asyncio
 
+from sql_dialect import SQLDialect
+
 logger = logging.getLogger(__name__)
 
-async def connect_to_database(connection_params: dict) -> PostgresConnectionManager:
-    db_connection = PostgresConnectionManager(connection_params)
+async def connect_to_database(db_connection: DatabaseConnectionManager) -> None:
     logger.info("Connecting to database...")
     await db_connection.connect()
     logger.info("Connection successfully")
-    return db_connection
+
 
 def load_input_data() -> tuple[list,list]:
     logger.info("Reading input files...")
@@ -21,9 +22,9 @@ def load_input_data() -> tuple[list,list]:
     logger.info("Files read successfully")
     return rooms_data, students_data
 
-async def create_database_schema(db_connection: PostgresConnectionManager, rooms_data: list, students_data: list) -> None:
+async def create_database_schema(db_connection: DatabaseConnectionManager, dialect: SQLDialect, rooms_data: list, students_data: list) -> None:
     logger.info("Starting schema creation")
-    schema_manager = PostgresSchemaManager(connection_manager=db_connection)
+    schema_manager = SchemaManager(connection_manager=db_connection, dialect=dialect)
 
     await schema_manager.create_table("rooms", rooms_data[0], "id")
     await schema_manager.insert_data("rooms", rooms_data)
@@ -39,9 +40,9 @@ async def create_database_schema(db_connection: PostgresConnectionManager, rooms
     await schema_manager.create_index("students", "birthday")
     logger.info("Schema creation completed")
 
-async def run_queries(db_connection: PostgresConnectionManager) -> tuple[list, list, list, list]:
+async def run_queries(db_connection: DatabaseConnectionManager, dialect: SQLDialect) -> tuple[list, list, list, list]:
     logger.info("Executing queries...")
-    query_manager = QueryManager(connection_manager=db_connection)
+    query_manager = QueryManager(connection_manager=db_connection, dialect=dialect)
 
     result = await asyncio.gather(query_manager.rooms_with_students_number(),
                                   query_manager.rooms_with_smallest_avg_age(),
