@@ -51,7 +51,7 @@ class SchemaManager:
         await self.connection_manager.execute_query(query)
 
     async def create_index(self, table_name: str, table_field: str) -> None:
-        query = f"CREATE INDEX IF NOT EXISTS idx_{table_name}_{table_field} ON {table_name}({table_field})"
+        query = f"CREATE INDEX idx_{table_name}_{table_field} ON {table_name}({table_field})"
 
         logger.debug("Creating index idx_%s_%s on %s(%s)", table_name, table_field, table_name, table_field)
         await self.connection_manager.execute_query(query)

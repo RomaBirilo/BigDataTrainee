@@ -37,10 +37,10 @@ class AppSettings(BaseSettings):
             settings = MySQLSettings()
             return {
                 "host": settings.host,
-                "database": settings.database,
+                "db": settings.database,
                 "user": settings.user,
                 "password": settings.password,
-                "port": settings.port,
+                "port": int(settings.port),
             }
         else:
             raise ValueError(f"Unsupported db_type: {self.db_type}")
