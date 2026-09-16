@@ -6,8 +6,8 @@ import logging
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload, MediaIoBaseUpload
 
-from source_manager import SourceManager
-from google_auth import get_credentials
+from data_sources.source_manager import SourceManager
+from data_sources.google_auth import get_credentials
 
 logger = logging.getLogger(__name__)
 

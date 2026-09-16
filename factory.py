@@ -1,12 +1,12 @@
-from database_connection_manager import DatabaseConnectionManager
-from googledrive_file_manager import GoogleDriveFileManager
-from json_file_manager import JSONFileManager
-from mysql_connection_manager import MySQLConnectionManager
-from postgres_connection_manager import PostgresConnectionManager
-from source_manager import SourceManager
-from sql_dialect import SQLDialect
-from postgres_dialect import PostgresDialect
-from mysql_dialect import MySQLDialect
+from db.database_connection_manager import DatabaseConnectionManager
+from data_sources.googledrive_file_manager import GoogleDriveFileManager
+from data_sources.json_file_manager import JSONFileManager
+from db.mysql_connection_manager import MySQLConnectionManager
+from db.postgres_connection_manager import PostgresConnectionManager
+from data_sources.source_manager import SourceManager
+from db.dialects.sql_dialect import SQLDialect
+from db.dialects.postgres_dialect import PostgresDialect
+from db.dialects.mysql_dialect import MySQLDialect
 
 def create_connection_manager(db_type: str, connection_params: dict) -> DatabaseConnectionManager:
     if db_type == "postgres":

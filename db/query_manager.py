@@ -1,5 +1,5 @@
-from database_connection_manager import DatabaseConnectionManager
-from sql_dialect import SQLDialect
+from db.database_connection_manager import DatabaseConnectionManager
+from db.dialects.sql_dialect import SQLDialect
 import logging
 
 logger = logging.getLogger(__name__)

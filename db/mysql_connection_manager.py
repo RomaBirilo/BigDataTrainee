@@ -1,6 +1,6 @@
 import logging
 import aiomysql
-from database_connection_manager import DatabaseConnectionManager
+from db.database_connection_manager import DatabaseConnectionManager
 
 logger = logging.getLogger(__name__)
 

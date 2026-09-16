@@ -1,11 +1,11 @@
-from database_connection_manager import DatabaseConnectionManager
-from source_manager import SourceManager
-from schema_manager import SchemaManager
-from query_manager import QueryManager
+from db.database_connection_manager import DatabaseConnectionManager
+from data_sources.source_manager import SourceManager
+from db.schema_manager import SchemaManager
+from db.query_manager import QueryManager
 import logging
 import asyncio
 
-from sql_dialect import SQLDialect
+from db.dialects.sql_dialect import SQLDialect
 
 logger = logging.getLogger(__name__)
 

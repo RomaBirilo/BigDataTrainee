@@ -1,7 +1,7 @@
 import logging
 import psycopg
 from psycopg_pool import AsyncConnectionPool
-from database_connection_manager import DatabaseConnectionManager
+from db.database_connection_manager import DatabaseConnectionManager
 
 logger = logging.getLogger(__name__)
 

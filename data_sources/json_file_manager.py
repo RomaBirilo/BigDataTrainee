@@ -1,6 +1,6 @@
 import json
 import logging
-from source_manager import SourceManager
+from data_sources.source_manager import SourceManager
 
 logger = logging.getLogger(__name__)
 
