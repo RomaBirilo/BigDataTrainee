@@ -1,5 +1,5 @@
 from database_connection_manager import DatabaseConnectionManager
-from json_file_manager import JSONFileManager
+from source_manager import SourceManager
 from schema_manager import SchemaManager
 from query_manager import QueryManager
 import logging
@@ -15,10 +15,10 @@ async def connect_to_database(db_connection: DatabaseConnectionManager) -> None:
     logger.info("Connection successfully")
 
 
-def load_input_data() -> tuple[list,list]:
+async def load_input_data(src_manager: SourceManager) -> tuple[list,list]:
     logger.info("Reading input files...")
-    rooms_data = JSONFileManager.read_json_file("rooms.json")
-    students_data = JSONFileManager.read_json_file("students.json")
+    rooms_data = await src_manager.read("rooms.json")
+    students_data = await src_manager.read("students.json")
     logger.info("Files read successfully")
     return rooms_data, students_data
 
@@ -52,10 +52,10 @@ async def run_queries(db_connection: DatabaseConnectionManager, dialect: SQLDial
     logger.info("All queries executed successfully")
     return result
 
-def save_results(result: tuple) -> None:
+async def save_results(src_manager: SourceManager, result: tuple) -> None:
     logger.info("Writing output files...")
-    JSONFileManager.write_json_file("rooms_with_students_number.json", result[0])
-    JSONFileManager.write_json_file("rooms_with_smallest_avg_age.json", result[1])
-    JSONFileManager.write_json_file("rooms_with_largest_age_diff.json", result[2])
-    JSONFileManager.write_json_file("rooms_with_diff_sex_students.json", result[3])
+    await src_manager.write("rooms_with_students_number.json", result[0])
+    await src_manager.write("rooms_with_smallest_avg_age.json", result[1])
+    await src_manager.write("rooms_with_largest_age_diff.json", result[2])
+    await src_manager.write("rooms_with_diff_sex_students.json", result[3])
     logger.info("Results saved successfully")
