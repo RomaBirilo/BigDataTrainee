@@ -35,10 +35,8 @@ class GoogleDriveFileManager(SourceManager):
             q=query, fields="files(id, name)", pageSize=1
         ).execute()
 
-        files = results.get("files", [])
-        return files[0]["id"] if files else None
-
-    # ---------- READ ----------
+        files = results.get("files", [{}])
+        return files[0].get("id")
 
     async def read(self, path: str) -> list | dict:
         return await asyncio.to_thread(self._read_sync, path)
@@ -61,8 +59,6 @@ class GoogleDriveFileManager(SourceManager):
 
         buffer.seek(0)
         return json.loads(buffer.read().decode("utf-8"))
-
-    # ---------- WRITE ----------
 
     async def write(self, path: str, data: list | dict) -> None:
         await asyncio.to_thread(self._write_sync, path, data)
