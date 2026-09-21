@@ -2,6 +2,7 @@ from db.database_connection_manager import DatabaseConnectionManager
 from data_sources.source_manager import SourceManager
 from db.schema_manager import SchemaManager
 from db.query_manager import QueryManager
+from db.db_schema_settings import DBSchemaConfig
 import logging
 import asyncio
 
@@ -14,30 +15,35 @@ async def connect_to_database(db_connection: DatabaseConnectionManager) -> None:
     await db_connection.connect()
     logger.info("Connection successfully")
 
+async def load_db_schema(src_manager: SourceManager, db_schema_path: str) -> DBSchemaConfig:
+    logger.info("Reading db schema config file...")
+    db_schema = DBSchemaConfig(**await src_manager.read(db_schema_path))
+    logger.info("Schema config file read successfully")
+    return db_schema
 
-async def load_input_data(src_manager: SourceManager) -> tuple[list,list]:
+async def load_input_data(src_manager: SourceManager, db_schema: DBSchemaConfig) -> dict[str, list]:
     logger.info("Reading input files...")
-    rooms_data = await src_manager.read("rooms.json")
-    students_data = await src_manager.read("students.json")
+    data_by_table = {}
+    for table in db_schema.tables:
+        data_by_table[table.name] = await src_manager.read(f"{table.name}.json")
     logger.info("Files read successfully")
-    return rooms_data, students_data
+    return data_by_table
 
-async def create_database_schema(db_connection: DatabaseConnectionManager, dialect: SQLDialect, rooms_data: list, students_data: list) -> None:
+async def create_database_schema(db_connection: DatabaseConnectionManager, dialect: SQLDialect, db_schema: DBSchemaConfig, data: dict[str, list]) -> None:
     logger.info("Starting schema creation")
     schema_manager = SchemaManager(connection_manager=db_connection, dialect=dialect)
 
-    await schema_manager.create_table("rooms", rooms_data[0], "id")
-    await schema_manager.insert_data("rooms", rooms_data)
+    for table in db_schema.tables:
+        table_data = data[table.name]
+        await schema_manager.create_table(table.name, table_data[0], table.primary_key)
+        await schema_manager.insert_data(table.name, table_data)
 
-    await schema_manager.create_table("students", students_data[0], "id")
-    await schema_manager.insert_data("students", students_data)
+    for relationship in db_schema.relationships:
+        await schema_manager.create_relationship(relationship.left_table, relationship.left_field,
+                                             relationship.right_table, relationship.right_field)
 
-    await schema_manager.create_relationship("students", "room",
-                                             "rooms", "id")
-
-    await schema_manager.create_index("rooms", "name")
-    await schema_manager.create_index("students", "name")
-    await schema_manager.create_index("students", "birthday")
+    for index in db_schema.indexes:
+        await schema_manager.create_index(index.table, index.field)
     logger.info("Schema creation completed")
 
 async def run_queries(db_connection: DatabaseConnectionManager, dialect: SQLDialect) -> tuple[list, list, list, list]:

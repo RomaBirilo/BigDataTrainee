@@ -22,6 +22,7 @@ class MySQLSettings(BaseSettings):
 
 class AppSettings(BaseSettings):
     db_type: str = "postgres"
+    db_schema_path: str = "db_schema_config.json"
 
     def get_connection_params(self) -> dict:
         if self.db_type == "postgres":

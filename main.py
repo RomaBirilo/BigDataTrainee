@@ -9,9 +9,10 @@ import asyncio
 import sys
 
 from factory import create_connection_manager, create_dialect, create_data_source
-from pipeline_functions import (connect_to_database, load_input_data,
+from pipeline_functions import (connect_to_database, load_db_schema, load_input_data,
                                 create_database_schema, run_queries, save_results)
 from config_settings import AppSettings, DataSourceSettings
+from data_sources.json_file_manager import JSONFileManager
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,15 @@ async def main(connection_params: dict) -> None:
     dialect = create_dialect(config.db_type)
     input_source = create_data_source(**data_source_settings.get_input_source_kwargs())
     output_source = create_data_source(**data_source_settings.get_output_source_kwargs())
+    db_schema_source = JSONFileManager()
     try:
         await connect_to_database(db_connection)
 
-        rooms_data, students_data = await load_input_data(input_source)
+        db_schema = await load_db_schema(db_schema_source, config.db_schema_path)
 
-        await create_database_schema(db_connection, dialect, rooms_data, students_data)
+        data = await load_input_data(input_source, db_schema)
+
+        await create_database_schema(db_connection, dialect, db_schema, data)
 
         result = await run_queries(db_connection, dialect)
 

@@ -1,0 +1,14 @@
+{
+  "tables": [
+    {"name": "rooms", "primary_key": "id"},
+    {"name": "students", "primary_key": "id"}
+  ],
+  "relationships": [
+    {"left_table": "students", "left_field": "room", "right_table": "rooms", "right_field": "id"}
+  ],
+  "indexes": [
+    {"table": "rooms", "field": "name"},
+    {"table": "students", "field": "name"},
+    {"table": "students", "field": "birthday"}
+  ]
+}
