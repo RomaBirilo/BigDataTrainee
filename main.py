@@ -32,9 +32,7 @@ async def main(connection_params: dict) -> None:
 
         db_schema = await load_db_schema(db_schema_source, config.db_schema_path)
 
-        data = await load_input_data(input_source, db_schema)
-
-        await create_database_schema(db_connection, dialect, db_schema, data)
+        await create_database_schema(db_connection, dialect, input_source, db_schema)
 
         result = await run_queries(db_connection, dialect)
 
