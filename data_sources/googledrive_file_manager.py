@@ -69,8 +69,8 @@ class GoogleDriveFileManager(SourceManager):
             q=query, fields="files(id, name)", pageSize=1
         ).execute()
 
-        files = results.get("files", [{}])
-        return files[0].get("id")
+        files = results.get("files", [])
+        return files[0]["id"] if files else None
 
     async def read(self, path: str) -> list | dict:
         return await asyncio.to_thread(self._read_sync, path)
@@ -130,7 +130,7 @@ class GoogleDriveFileManager(SourceManager):
         headers = {"Authorization": f"Bearer {credentials.token}"}
         timeout = aiohttp.ClientTimeout(total=None, sock_read=60, sock_connect=30)
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url, headers=headers) as response:
                 response.raise_for_status()
                 async for chunk in response.content.iter_chunked(CHUNK_SIZE):
