@@ -2,6 +2,7 @@ import asyncio
 import io
 import json
 import logging
+import time
 from typing import AsyncIterator
 
 import aiohttp
@@ -23,14 +24,22 @@ class AsyncByteStreamReader:
         self._chunk_iterator = chunk_iterator
         self._buffer = b""
         self._exhausted = False
+        self._chunks = 0
 
     async def read(self, size: int = -1) -> bytes:
         while not self._exhausted and (size < 0 or len(self._buffer) < size):
             try:
+                t0 = time.perf_counter()
                 chunk = await self._chunk_iterator.__anext__()
+                waited = time.perf_counter() - t0
+                self._chunks += 1
+                if waited > 1.0 or self._chunks % 500 == 0:
+                    logger.debug("reader: chunk #%d (%d bytes) received after %.2fs, buffer=%d bytes",
+                                 self._chunks, len(chunk), waited, len(self._buffer))
                 self._buffer += chunk
             except StopAsyncIteration:
                 self._exhausted = True
+                logger.debug("reader: source exhausted after %d chunks", self._chunks)
                 break
 
         if size < 0:

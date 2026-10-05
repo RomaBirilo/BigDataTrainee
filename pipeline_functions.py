@@ -30,6 +30,10 @@ async def load_input_data(src_manager: SourceManager, db_schema: DBSchemaConfig)
     logger.info("Files read successfully")
     return data_by_table
 
+def transformation(batch: list):
+    for record in batch:
+        record["name"] = "!" + record["name"]
+
 async def create_database_schema(db_connection: DatabaseConnectionManager, dialect: SQLDialect,
                                   source_manager: SourceManager, db_schema: DBSchemaConfig,
                                   batch_size: int = 10_000) -> None:
@@ -37,7 +41,7 @@ async def create_database_schema(db_connection: DatabaseConnectionManager, diale
     schema_manager = SchemaManager(connection_manager=db_connection, dialect=dialect)
 
     for table in db_schema.tables:
-        await fill_table_stream(schema_manager, source_manager, table, batch_size)
+        await fill_table_stream(schema_manager, source_manager, table, transformation, batch_size)
 
     for relationship in db_schema.relationships:
         await schema_manager.create_relationship(relationship.left_table, relationship.left_field,
