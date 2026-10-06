@@ -15,7 +15,8 @@ class QueryManager:
             FROM rooms AS r
             LEFT JOIN students AS s ON r.id = s.room
             GROUP BY r.id, r.name
-            ORDER BY r.id;
+            ORDER BY r.id
+            LIMIT 100;
         """
 
         logger.debug("Executing query: rooms_with_students_number")
@@ -62,7 +63,8 @@ class QueryManager:
             INNER JOIN students AS s ON r.id = s.room
             GROUP BY r.id, r.name
             HAVING COUNT(DISTINCT s.sex) = 2
-            ORDER BY r.id;     
+            ORDER BY r.id
+            LIMIT 100;     
         """
 
         logger.debug("Executing query: rooms_with_diff_sex_students")
